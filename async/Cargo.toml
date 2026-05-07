@@ -17,7 +17,7 @@ crate-type = ["rlib"]
 
 [features]
 default = ["tokio"]
-std = ["time/std", "tracing/std"]
+std = ["time/std", "tracing/std", "dep:flume"]
 tokio = ["std", "dep:tokio", "dep:tokio-util"]
 instrument = ["tracing/attributes"]
 
@@ -27,6 +27,7 @@ async-trait = "0.1"
 tokio = { version = "1", optional = true, features = ["rt", "macros", "time", "signal"] }
 tokio-util = { version = "0.7", optional = true, features = ["rt"] }
 tracing = { version = "0.1", default-features = false }
+flume = { version = "0.12", optional = true }
 spin = "0.10"
 trace-err = "1"
 
