@@ -30,8 +30,14 @@ sudo rm -rf /build
 sudo mkdir -p /build
 sudo cp -a "$EXTRACTED_BUILD_DIR/." /build/
 
-raw_compile_commands="$EXTRACTED_BUILD_DIR/build/compile_commands.json"
+raw_compile_commands="$EXTRACTED_BUILD_DIR/build/native/default/compile_commands.json"
 final_compile_commands="$ARTIFACT_DIR/compile_commands.json"
+
+if [[ ! -f "$raw_compile_commands" ]]; then
+    echo "Expected compile_commands.json at: $raw_compile_commands" >&2
+    find "$EXTRACTED_BUILD_DIR" -name compile_commands.json -print >&2 || true
+    exit 1
+fi
 
 jq \
     --arg workspace "$WORKSPACE_DIR" \
