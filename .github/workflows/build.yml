@@ -23,6 +23,11 @@ jobs:
           shared-key: sonar
       - name: Install analysis dependencies
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler jq
+      - name: Generate Clippy report for Sonar
+        run: |
+          mkdir -p .sonar
+          cargo clippy --locked --workspace --all-targets --all-features --message-format=json \
+            > .sonar/rust-clippy.json || true
       - name: Prepare CFamily compile database
         run: ./tests/interop/NASA-cFS/prepare_sonar_cfamily.sh "$GITHUB_WORKSPACE"
       - name: SonarQube Scan

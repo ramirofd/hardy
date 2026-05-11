@@ -36,30 +36,56 @@ final_compile_commands="$ARTIFACT_DIR/compile_commands.json"
 jq \
     --arg workspace "$WORKSPACE_DIR" \
     '
-    def remap_file:
-        if . == "/build/cfs-bundle/psp/fsw/modules/stcpsock_intf/stcpsock_intf.c" then
-            $workspace + "/tests/interop/NASA-cFS/stcpsock_intf/stcpsock_intf.c"
-        elif . == "/build/src/echo_app/fsw/src/echo_app.c" then
-            $workspace + "/tests/interop/NASA-cFS/echo_app/fsw/src/echo_app.c"
-        elif . == "/build/src/bpnode/fsw/tables/bpnode_adup.c" then
-            $workspace + "/tests/interop/NASA-cFS/cfs-config/bpnode_adup.c"
-        elif . == "/build/interop_defs/sch_lab_table.c" then
-            $workspace + "/tests/interop/NASA-cFS/cfs-config/sch_lab_table.c"
+    def normalize_file:
+        if .file | startswith("/") then
+            .file
         else
-            .
+            .directory + "/" + .file
         end;
 
-    map(
-        .file = (.file | remap_file)
+    def remap_file($path):
+        if $path | endswith("/cfs-bundle/psp/fsw/modules/stcpsock_intf/stcpsock_intf.c") then
+            $workspace + "/tests/interop/NASA-cFS/stcpsock_intf/stcpsock_intf.c"
+        elif $path | endswith("/src/echo_app/fsw/src/echo_app.c") then
+            $workspace + "/tests/interop/NASA-cFS/echo_app/fsw/src/echo_app.c"
+        elif $path | endswith("/src/bpnode/fsw/tables/bpnode_adup.c") then
+            $workspace + "/tests/interop/NASA-cFS/cfs-config/bpnode_adup.c"
+        elif $path | endswith("/interop_defs/sch_lab_table.c") then
+            $workspace + "/tests/interop/NASA-cFS/cfs-config/sch_lab_table.c"
+        else
+            null
+        end;
+
+    map(. + {source_file: (normalize_file | remap_file(.))})
+    | map(select(.source_file != null))
+    | map(
+        .file = .source_file
         | .command = (
-            .command
+            (.command // "")
             | gsub("/build/cfs-bundle/psp/fsw/modules/stcpsock_intf/stcpsock_intf.c"; $workspace + "/tests/interop/NASA-cFS/stcpsock_intf/stcpsock_intf.c")
             | gsub("/build/src/echo_app/fsw/src/echo_app.c"; $workspace + "/tests/interop/NASA-cFS/echo_app/fsw/src/echo_app.c")
             | gsub("/build/src/bpnode/fsw/tables/bpnode_adup.c"; $workspace + "/tests/interop/NASA-cFS/cfs-config/bpnode_adup.c")
             | gsub("/build/interop_defs/sch_lab_table.c"; $workspace + "/tests/interop/NASA-cFS/cfs-config/sch_lab_table.c")
-        )
+          )
+        | .arguments = (
+            (.arguments // [])
+            | map(
+                if . == "/build/cfs-bundle/psp/fsw/modules/stcpsock_intf/stcpsock_intf.c" then
+                    $workspace + "/tests/interop/NASA-cFS/stcpsock_intf/stcpsock_intf.c"
+                elif . == "/build/src/echo_app/fsw/src/echo_app.c" then
+                    $workspace + "/tests/interop/NASA-cFS/echo_app/fsw/src/echo_app.c"
+                elif . == "/build/src/bpnode/fsw/tables/bpnode_adup.c" then
+                    $workspace + "/tests/interop/NASA-cFS/cfs-config/bpnode_adup.c"
+                elif . == "/build/interop_defs/sch_lab_table.c" then
+                    $workspace + "/tests/interop/NASA-cFS/cfs-config/sch_lab_table.c"
+                else
+                    .
+                end
+            )
+          )
+        | del(.source_file)
     )
     ' \
     "$raw_compile_commands" > "$final_compile_commands"
 
-test -s "$final_compile_commands"
+jq -e 'length > 0' "$final_compile_commands" >/dev/null
