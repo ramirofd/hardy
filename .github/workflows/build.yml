@@ -44,7 +44,9 @@ jobs:
           TEST_S3_ENDPOINT: http://localhost:9000
           AWS_ACCESS_KEY_ID: minioadmin
           AWS_SECRET_ACCESS_KEY: minioadmin
-        run: cargo llvm-cov --workspace --all-features --lcov --output-path coverage/lcov.info
+        run: |
+          mkdir -p coverage
+          cargo llvm-cov --workspace --all-features --lcov --output-path coverage/lcov.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         env:
