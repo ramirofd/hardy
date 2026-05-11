@@ -16,18 +16,22 @@ jobs:
       - name: Setup Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          components: clippy
+          components: clippy, llvm-tools-preview
       - name: Use cached dependencies and artifacts
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: sonar
       - name: Install Protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --locked
       - name: Run Clippy for Sonar
         run: |
           mkdir -p .sonar
           cargo clippy --locked --workspace --all-targets --all-features --message-format=json \
             > .sonar/rust-clippy.json
+      - name: Generate Rust coverage
+        run: cargo llvm-cov --workspace --all-features --lcov --output-path coverage/lcov.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         env:
