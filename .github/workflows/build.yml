@@ -8,11 +8,23 @@ on:
 jobs:
   sonarqube:
     name: SonarQube
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
+      - name: Use cached dependencies and artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: sonar
+      - name: Install analysis dependencies
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler jq
+      - name: Prepare CFamily compile database
+        run: ./tests/interop/NASA-cFS/prepare_sonar_cfamily.sh "$GITHUB_WORKSPACE"
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         env:

@@ -148,6 +148,7 @@ COPY cfs-config/bpnode_adup.c        src/bpnode/fsw/tables/bpnode_adup.c
 # Run CMake
 RUN cmake \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DSIMULATION=native \
     -DCMAKE_INSTALL_PREFIX=/exe \
     -DMISSIONCONFIG=interop \
