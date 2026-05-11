@@ -30,9 +30,25 @@ jobs:
           mkdir -p .sonar
           cargo clippy --locked --workspace --all-targets --all-features --message-format=json \
             > .sonar/rust-clippy.json
+      - name: Start storage test services
+        run: docker compose -f tests/storage/compose.storage-tests.yml up -d --wait
+      - name: Create S3 test bucket
+        run: |
+          docker compose -f tests/storage/compose.storage-tests.yml exec minio \
+            mc alias set local http://localhost:9000 minioadmin minioadmin
+          docker compose -f tests/storage/compose.storage-tests.yml exec minio \
+            mc mb --ignore-existing local/hardy-test
       - name: Generate Rust coverage
+        env:
+          TEST_POSTGRES_URL: postgresql://hardy:hardy@localhost:5432
+          TEST_S3_ENDPOINT: http://localhost:9000
+          AWS_ACCESS_KEY_ID: minioadmin
+          AWS_SECRET_ACCESS_KEY: minioadmin
         run: cargo llvm-cov --workspace --all-features --lcov --output-path coverage/lcov.info
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Cleanup storage test services
+        if: always()
+        run: docker compose -f tests/storage/compose.storage-tests.yml down -v
